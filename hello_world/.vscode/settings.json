@@ -1,0 +1,11 @@
+{
+  "C_Cpp.intelliSenseEngine": "Tag Parser",
+  "files.associations": {
+    "max30003.h": "c",
+    "task.h": "c",
+    "esp_system.h": "c",
+    "freertos.h": "c",
+    "sdkconfig.h": "c"
+  },
+  "idf.adapterTargetName": "esp32"
+}
