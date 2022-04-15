@@ -23,10 +23,10 @@ extern "C"
         }
     }
 
-    void AAA_sayHi(double *y, int m)
+    void getDetrend(double *y, int m)
     {
         lazyAAA();
-        AAA_instance->sayHi(y,m);
+        AAA_instance->getDetrend(y,m);
     }
 
 #ifdef __cplusplus

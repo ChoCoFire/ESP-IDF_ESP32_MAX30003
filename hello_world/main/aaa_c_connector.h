@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-    void AAA_sayHi(double *y, int m);
+    void getDetrend(double *y, int m);
 
 #ifdef __cplusplus
 }

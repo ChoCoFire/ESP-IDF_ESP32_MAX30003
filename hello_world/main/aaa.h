@@ -4,7 +4,7 @@
 class AAA {
     public:
         AAA();
-        void sayHi(double *y, int m);
+        void getDetrend(double *y, int m);
 };
 
 #endif

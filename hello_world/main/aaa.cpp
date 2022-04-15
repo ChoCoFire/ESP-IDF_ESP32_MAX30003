@@ -12,7 +12,7 @@ using namespace std;
 AAA::AAA() {
 }
 
-void AAA::sayHi(double *y, int m)
+void AAA::getDetrend(double *y, int m)
 {
     double xmean, ymean;
     int i;
