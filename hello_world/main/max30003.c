@@ -40,7 +40,7 @@ void max30003_initchip(int pin_miso, int pin_mosi, int pin_sck, int pin_cs )
 
     spi_device_interface_config_t devcfg=
     {
-        .clock_speed_hz=4000000,             	                //Clock out at 10 MHz
+        .clock_speed_hz=14000000,             	                //Clock out at 10 MHz
         .mode=0,                               	                //SPI mode 0,1,2,3
         .spics_io_num=pin_cs,              		                //CS pin
         .queue_size=7,                                          //We want to be able to queue 7 transactions at a time

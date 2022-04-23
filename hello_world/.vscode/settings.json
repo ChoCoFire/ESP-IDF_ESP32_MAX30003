@@ -5,7 +5,11 @@
     "task.h": "c",
     "esp_system.h": "c",
     "freertos.h": "c",
-    "sdkconfig.h": "c"
+    "sdkconfig.h": "c",
+    "esp_log.h": "c",
+    "normalize.h": "c",
+    "wavelib.h": "c"
   },
-  "idf.adapterTargetName": "esp32"
+  "idf.adapterTargetName": "esp32",
+  "idf.portWin": "COM5"
 }
