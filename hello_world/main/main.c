@@ -37,6 +37,21 @@
 
 TaskHandle_t tx_rx_task;
 
+// define string
+static const char *user = "ESP01";
+
+char *concat(const char *s1, const char *s2)
+{
+    ESP_LOGI("SWU_BME", " End result");
+    ESP_LOGI("SWU_BME", " End strlen1 : %d",strlen(s1));
+    ESP_LOGI("SWU_BME", " End strlen2 : %d",strlen(s2));
+    char *result = malloc(strlen(s1) + strlen(s2) + 10); // +1 for the null-terminator
+    // in real code you would check for errors in malloc here
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
+}
+
 double *preProcess(double signal[])
 {
 
@@ -76,7 +91,7 @@ double *preProcess(double signal[])
     }
     wt = wt_init(obj, "dwt", signal_size, wlvl); // Initialize the wavelet transform object
     dwt(wt, inp);                                // Perform DWT
-    // ESP_LOGI("SWU_BME wavelet", "%g", wt->output[0]);
+    ESP_LOGI("SWU_BME wavelet", "%g", wt->output[0]);
     free(inp);
     return wt->output;
 }
@@ -87,7 +102,8 @@ const int CONNECTED_BIT = BIT0;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
-    switch(event->event_id) {
+    switch (event->event_id)
+    {
     case SYSTEM_EVENT_STA_START:
         esp_wifi_connect();
         break;
@@ -106,23 +122,22 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 
 void wifi_init(void)
 {
-      tcpip_adapter_init();
-      wifi_event_group = xEventGroupCreate();
-      ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-      wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-      ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-      ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-      wifi_config_t wifi_config = {
-          .sta = {
-              .ssid = "ChoCoFire_2.4G",
-              .password = "319!1623",
-          },
-      };
-      ESP_LOGI("BME SWU", "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-      ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-      ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-      ESP_ERROR_CHECK( esp_wifi_start() );
-
+    tcpip_adapter_init();
+    wifi_event_group = xEventGroupCreate();
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = "ChoCoFire_2.4G",
+            .password = "319!1623",
+        },
+    };
+    ESP_LOGI("BME SWU", "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
 #define MAX_HTTP_RECV_BUFFER 512
@@ -130,76 +145,86 @@ void wifi_init(void)
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
-    static char *output_buffer;  // Buffer to store response of http request from event handler
-    static int output_len;       // Stores number of bytes read
-    switch(evt->event_id) {
-        case HTTP_EVENT_ERROR:
-            ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
-            break;
-        case HTTP_EVENT_ON_CONNECTED:
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
-            break;
-        case HTTP_EVENT_HEADER_SENT:
-            ESP_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
-            break;
-        case HTTP_EVENT_ON_HEADER:
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
-            break;
-        case HTTP_EVENT_ON_DATA:
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-            /*
-             *  Check for chunked encoding is added as the URL for chunked encoding used in this example returns binary data.
-             *  However, event handler can also be used in case chunked encoding is used.
-             */
-            if (!esp_http_client_is_chunked_response(evt->client)) {
-                // If user_data buffer is configured, copy the response into the buffer
-                if (evt->user_data) {
-                    memcpy(evt->user_data + output_len, evt->data, evt->data_len);
-                } else {
-                    if (output_buffer == NULL) {
-                        output_buffer = (char *) malloc(esp_http_client_get_content_length(evt->client));
-                        output_len = 0;
-                        if (output_buffer == NULL) {
-                            ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
-                            return ESP_FAIL;
-                        }
+    static char *output_buffer; // Buffer to store response of http request from event handler
+    static int output_len;      // Stores number of bytes read
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ERROR:
+        ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
+        break;
+    case HTTP_EVENT_ON_CONNECTED:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_CONNECTED");
+        break;
+    case HTTP_EVENT_HEADER_SENT:
+        ESP_LOGD(TAG, "HTTP_EVENT_HEADER_SENT");
+        break;
+    case HTTP_EVENT_ON_HEADER:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+        break;
+    case HTTP_EVENT_ON_DATA:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+        /*
+         *  Check for chunked encoding is added as the URL for chunked encoding used in this example returns binary data.
+         *  However, event handler can also be used in case chunked encoding is used.
+         */
+        if (!esp_http_client_is_chunked_response(evt->client))
+        {
+            // If user_data buffer is configured, copy the response into the buffer
+            if (evt->user_data)
+            {
+                memcpy(evt->user_data + output_len, evt->data, evt->data_len);
+            }
+            else
+            {
+                if (output_buffer == NULL)
+                {
+                    output_buffer = (char *)malloc(esp_http_client_get_content_length(evt->client));
+                    output_len = 0;
+                    if (output_buffer == NULL)
+                    {
+                        ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
+                        return ESP_FAIL;
                     }
-                    memcpy(output_buffer + output_len, evt->data, evt->data_len);
                 }
-                output_len += evt->data_len;
+                memcpy(output_buffer + output_len, evt->data, evt->data_len);
             }
+            output_len += evt->data_len;
+        }
 
-            break;
-        case HTTP_EVENT_ON_FINISH:
-            ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
-            if (output_buffer != NULL) {
-                // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-                // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
-                free(output_buffer);
-                output_buffer = NULL;
-            }
-            output_len = 0;
-            break;
-        case HTTP_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
-            int mbedtls_err = 0;
-            esp_err_t err = esp_tls_get_and_clear_last_error(evt->data, &mbedtls_err, NULL);
-            if (err != 0) {
-                ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
-                ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
-            }
-            if (output_buffer != NULL) {
-                free(output_buffer);
-                output_buffer = NULL;
-            }
-            output_len = 0;
-            break;
+        break;
+    case HTTP_EVENT_ON_FINISH:
+        ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
+        if (output_buffer != NULL)
+        {
+            // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
+            // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+            free(output_buffer);
+            output_buffer = NULL;
+        }
+        output_len = 0;
+        break;
+    case HTTP_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+        int mbedtls_err = 0;
+        esp_err_t err = esp_tls_get_and_clear_last_error(evt->data, &mbedtls_err, NULL);
+        if (err != 0)
+        {
+            ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
+            ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
+        }
+        if (output_buffer != NULL)
+        {
+            free(output_buffer);
+            output_buffer = NULL;
+        }
+        output_len = 0;
+        break;
     }
     return ESP_OK;
 }
 
-
-static void http_rest_with_url(void){
+static void http_rest_with_url(char *dataInput, char *predictInput, char *percentInput)
+{
 
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};
     /**
@@ -209,62 +234,151 @@ static void http_rest_with_url(void){
      *
      * If URL as well as host and path parameters are specified, values of host and path will be considered.
      */
+    ESP_LOGI("SWU_BME", " Start http_rest_with_url config");
     esp_http_client_config_t config = {
-        .host = "httpbin.org",
-        .path = "/get",
-        .query = "esp",
+        .url = "http://192.168.1.103:5000/api/data",
         .event_handler = _http_event_handler,
-        .user_data = local_response_buffer,        // Pass address of local buffer to get response
+        .user_data = local_response_buffer, // Pass address of local buffer to get response
         .disable_auto_redirect = true,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
-    // GET
-    esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        ESP_LOGI("BME SWU", "HTTP GET Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-    } else {
-        ESP_LOGE("BME SWU", "HTTP GET request failed: %s", esp_err_to_name(err));
-    }
-    ESP_LOG_BUFFER_HEX("BME SWU", local_response_buffer, strlen(local_response_buffer));
-
+    char *post_data ;
+    post_data = (char *)malloc(sizeof(char) * 1200);
+    post_data = "";
     // POST
-    const char *post_data = "{\"field1\":\"value1\"}";
-    esp_http_client_set_url(client, "https://httpbin.org/post");
+    char *data = "{\"data\":\"";
+    char *create_by = "\",\"create_by\":\"";
+    char *edit_by = "\",\"edit_by\":\"";
+    char *predict = "\",\"predict\":\"";
+    char *percent = "\",\"percent\":\"";
+    char *end = "\"}";
+
+    ESP_LOGI("SWU_BME", " Start concat");
+    post_data = concat(post_data, data);
+    post_data = concat(post_data, dataInput);
+
+    ESP_LOGI("SWU_BME", " Start create_by");
+    post_data = concat(post_data, create_by);
+    post_data = concat(post_data, user);
+
+    ESP_LOGI("SWU_BME", " Start edit_by");
+    post_data = concat(post_data, edit_by);
+    post_data = concat(post_data, user);
+
+    ESP_LOGI("SWU_BME", " Start predict");
+    post_data = concat(post_data, predict);
+    post_data = concat(post_data, predictInput);
+
+    ESP_LOGI("SWU_BME", " Start percent1");
+    post_data = concat(post_data, percent);
+    ESP_LOGI("SWU_BME", " Start percent2");
+    post_data = concat(post_data, percentInput);
+
+    post_data = concat(post_data, end);
+
+    ESP_LOGI("SWU_BME", " call http");
+    // esp_http_client_set_url(client, "http://192.168.1.103:5000/api/data");
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/json");
     esp_http_client_set_post_field(client, post_data, strlen(post_data));
-    err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
         ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-    } else {
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
+    }
+    else
+    {
         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
     }
-    ESP_LOG_BUFFER_HEX("BME SWU", local_response_buffer, strlen(local_response_buffer));
-    ESP_LOGI(TAG, "HTTP POST Status = %s",local_response_buffer);
+    free(post_data);
+    // ESP_LOG_BUFFER_HEX("BME SWU", local_response_buffer, strlen(local_response_buffer));
+    // ESP_LOGI(TAG, "HTTP POST Status = %s",local_response_buffer);
+}
+
+void send_data(void *pvParameters)
+{
+
+    int signal_inx = 0;
+    int signal_size = 100;
+    char *input;
+    input = (char *)malloc(sizeof(char) * 1200);
+    input = "";
+    double *signal_arr;
+    signal_arr = (double *)malloc(sizeof(double) * signal_size);
+
+    ESP_LOGI(TAG, "send data");
+    while (1)
+    {
+        long db = max30003_read_ecg_data();
+        double mv = db / (3.3 * 262144);
+        // ESP_LOGI("SWU_BME", "%f", mv);
+
+        if (signal_inx < signal_size)
+        {
+            // char convert[10];
+            // sprintf(convert, "%f", mv);
+            // input = concat(input,convert);
+            // input = concat(input,",");
+            // ESP_LOGI("SWU_BME", " index %d : %s" , signal_inx,convert);
+            // ESP_LOGI("SWU_BME", " index %d", signal_inx);
+            signal_arr[signal_inx] = mv;
+            signal_inx++;
+            // ESP_LOGI("SWU_BME", " signal_arr %f" , signal_arr[signal_inx]);
+        }
+        else if (signal_inx == signal_size)
+        {
+            ESP_LOGI("SWU_BME", " Start signal_inx");
+
+            signal_inx = 0;
+            // ESP_LOGI("SWU_BME", " set zero");
+            // preProcess(signal_arr);
+
+            // for (int i = 0; i < signal_size; i++)
+            // {
+            //     char *convert[10];
+            //     sprintf(convert, "%.5f", signal_arr[i]);
+            //     input = concat(input, convert);
+            //     input = concat(input, ",");
+            //     // if(i==signal_size-1){
+            //         ESP_LOGI("SWU_BME", "for %d", i);
+            //     // }
+            // }
+
+            // char *httpInput;
+            // httpInput = (char *)malloc(sizeof(char) * 1000);
+            // httpInput = input;
+
+            // free(input);
+
+            ESP_LOGI("SWU_BME", " Start http_rest_with_url");
+            http_rest_with_url(input, "0", "90");
+            ESP_LOGI("SWU_BME", " End empty");
+            ESP_LOGI("SWU_BME", " End http_rest_with_url");
+        }
+        vTaskDelay(12 / portTICK_PERIOD_MS);
+    }
 }
 
 void app_main(void)
 {
     nvs_flash_init();
 
-    max30003_initchip(PIN_SPI_MISO,PIN_SPI_MOSI,PIN_SPI_SCK,PIN_SPI_CS);
-	vTaskDelay(2/ portTICK_PERIOD_MS);
+    max30003_initchip(PIN_SPI_MISO, PIN_SPI_MOSI, PIN_SPI_SCK, PIN_SPI_CS);
+    vTaskDelay(2 / portTICK_PERIOD_MS);
 
     wifi_init();
-	
-    /* Wait for WiFI to show as connected */
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,false, true, portMAX_DELAY);
 
-    http_rest_with_url();
-   
+    /* Wait for WiFI to show as connected */
+    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
+
+    // http_rest_with_url();
+    xTaskCreate(&send_data, "send_data", 4096, NULL, 5, NULL);
 }
 
-// void old_app_main(void)
+// void app_main(void)
 // {
 //     // init SPI pin with your setup
 //     max30003_initchip(PIN_SPI_MISO, PIN_SPI_MOSI, PIN_SPI_SCK, PIN_SPI_CS);
@@ -279,25 +393,22 @@ void app_main(void)
 //     while (1)
 //     {
 //         long db = max30003_read_ecg_data();
-//         if (db < 0)
-//         {
-//             double mv = db / (3.3 * 262144);
-//             ESP_LOGI("SWU_BME", "%f", mv);
+//         double mv = db / (3.3 * 262144);
+//         // ESP_LOGI("SWU_BME", "%f", mv);
+
+//         if(signal_inx < signal_size){
+//             ESP_LOGI("SWU_BME", " index %d" , signal_inx);
+//             signal_arr[signal_inx] = mv;
+//             signal_inx++;
+//         //     ESP_LOGI("SWU_BME", " signal_arr %f" , signal_arr[signal_inx]);
+//         }else if(signal_inx == signal_size){
+//             signal_inx = 0;
+//         //     // ESP_LOGI("SWU_BME", " set zero");
+//             preProcess(signal_arr);
+//         //     free(signal_arr);
 //         }
 
-//         // if(signal_inx < signal_size){
-//         //     // ESP_LOGI("SWU_BME", " index %d" , signal_inx);
-//         //     signal_arr[signal_inx] = db;
-//         //     signal_inx++;
-//         //     ESP_LOGI("SWU_BME", " signal_arr %f" , signal_arr[signal_inx]);
-//         // }else if(signal_inx == signal_size){
-//         //     signal_inx = 0;
-//         //     // ESP_LOGI("SWU_BME", " set zero");
-//         //     preProcess(signal_arr);
-//         //     free(signal_arr);
-//         // }
-
 //         // printf("%ld, ", db);
-//         vTaskDelay(2 / portTICK_PERIOD_MS);
+//         vTaskDelay(16 / portTICK_PERIOD_MS);
 //     }
 // }
